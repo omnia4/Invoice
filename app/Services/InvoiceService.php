@@ -98,4 +98,8 @@ class InvoiceService
             'latest_invoice_date' => optional($invoices->max('created_at')),
         ];
     }
+    public function getInvoicesForContract(int $contractId, array $filters = [])
+{
+    return $this->invoiceRepo->getByContractId($contractId, $filters);
+}
 }

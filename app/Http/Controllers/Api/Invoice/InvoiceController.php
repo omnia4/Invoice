@@ -38,14 +38,23 @@ class InvoiceController extends Controller
             ->setStatusCode(201);
     }
 
-    public function index(Contract $contract)
-    {
-        $this->authorize('view', $contract);
+public function index(Contract $contract)
+{
+    $this->authorize('view', $contract);
 
-        $invoices = $contract->invoices()->with('payments')->get();
+    $filters = [
+        'status' => request('status'),
+        'from' => request('from'),
+        'to' => request('to'),
+        'min_total' => request('min_total'),
+        'max_total' => request('max_total'),
+    ];
 
-        return InvoiceResource::collection($invoices);
-    }
+    $invoices = $this->invoiceService
+                     ->getInvoicesForContract($contract->id, $filters);
+
+    return InvoiceResource::collection($invoices);
+}
 
     public function show(Invoice $invoice)
     {
