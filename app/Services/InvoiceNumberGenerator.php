@@ -9,26 +9,21 @@ class InvoiceNumberGenerator
 {
     public static function generate(int $tenantId): string
     {
-        $now = Carbon::now();
-        $yearMonth = $now->format('Ym'); 
+        $month = now()->format('Ym');
 
+  
         $lastInvoice = Invoice::where('tenant_id', $tenantId)
-            ->where('invoice_number', 'like', "INV-{$tenantId}-{$yearMonth}-%")
-            ->orderByDesc('id')
+            ->where('invoice_number', 'like', "INV-{$tenantId}-{$month}-%")
+            ->orderBy('invoice_number', 'desc')
             ->first();
 
-        $sequence = 1;
-
         if ($lastInvoice) {
-            $lastSequence = (int) substr($lastInvoice->invoice_number, -4);
-            $sequence = $lastSequence + 1;
+            $lastSeq = (int) substr($lastInvoice->invoice_number, -4);
+            $nextSeq = str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $nextSeq = '0001';
         }
 
-        return sprintf(
-            'INV-%03d-%s-%04d',
-            $tenantId,
-            $yearMonth,
-            $sequence
-        );
+        return "INV-{$tenantId}-{$month}-{$nextSeq}";
     }
 }

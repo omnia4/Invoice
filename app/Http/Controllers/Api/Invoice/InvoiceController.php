@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Api\Invoice;
 
 use App\DTOs\CreateInvoiceDTO;
@@ -13,7 +12,7 @@ use App\Http\Resources\Api\Payment\PaymentResource;
 use App\Models\Contract;
 use App\Models\Invoice;
 use App\Services\InvoiceService;
-
+use App\Services\ResponseService;
 
 class InvoiceController extends Controller
 {
@@ -30,31 +29,33 @@ class InvoiceController extends Controller
 // ]);
         $this->authorize('create', [Invoice::class, $contract]);
 
-       $dto = CreateInvoiceDTO::fromRequest($request, $contract);
+        $dto     = CreateInvoiceDTO::fromRequest($request, $contract);
         $invoice = $this->invoiceService->createInvoice($dto);
 
-        return InvoiceResource::make($invoice)
-            ->response()
-            ->setStatusCode(201);
+        return ResponseService::success(
+            data: new InvoiceResource($invoice),
+            message: 'Invoice created successfully',
+            statusCode: 201
+        );
     }
 
-public function index(Contract $contract)
-{
-    $this->authorize('view', $contract);
+    public function index(Contract $contract)
+    {
+        $this->authorize('view', $contract);
 
-    $filters = [
-        'status' => request('status'),
-        'from' => request('from'),
-        'to' => request('to'),
-        'min_total' => request('min_total'),
-        'max_total' => request('max_total'),
-    ];
+        $filters = [
+            'status'    => request('status'),
+            'from'      => request('from'),
+            'to'        => request('to'),
+            'min_total' => request('min_total'),
+            'max_total' => request('max_total'),
+        ];
 
-    $invoices = $this->invoiceService
-                     ->getInvoicesForContract($contract->id, $filters);
+        $invoices = $this->invoiceService
+            ->getInvoicesForContract($contract->id, $filters);
 
-    return InvoiceResource::collection($invoices);
-}
+        return InvoiceResource::collection($invoices);
+    }
 
     public function show(Invoice $invoice)
     {
@@ -71,15 +72,17 @@ public function index(Contract $contract)
     ) {
         $this->authorize('recordPayment', $invoice);
 
-            $dto = RecordPaymentDTO::fromRequest(
-        $request,
-        $invoice->id
-    );
+        $dto = RecordPaymentDTO::fromRequest(
+            $request,
+            $invoice->id
+        );
         $payment = $this->invoiceService->recordPayment($dto);
 
-        return PaymentResource::make($payment)
-            ->response()
-            ->setStatusCode(201);
+        return ResponseService::success(
+            data: new PaymentResource($payment),
+            message: 'Payment recorded successfully',
+            statusCode: 201
+        );
     }
 
     public function summary(Contract $contract)
@@ -89,6 +92,9 @@ public function index(Contract $contract)
         $summary = $this->invoiceService
             ->getContractSummary($contract->id);
 
-        return new ContractSummaryResource($summary);
+        return ResponseService::success(
+            data: new ContractSummaryResource($summary),
+            message: 'Contract financial summary retrieved'
+        );
     }
 }
